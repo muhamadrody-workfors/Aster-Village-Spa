@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - SmartBooking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Panel Pengurusan Servis</h1>
+            <a href="index.html" class="text-blue-600 underline">Lihat Kedai</a>
+        </div>
+
+        <!-- Form Tambah Servis -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+            <h2 class="font-bold mb-4 border-b pb-2">Tambah / Edit Servis</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="name" placeholder="Nama Servis (Contoh: Potong Rambut)" class="border p-2 rounded">
+                <input type="number" id="price" placeholder="Harga (RM)" class="border p-2 rounded">
+                <input type="text" id="image" placeholder="URL Gambar (Link)" class="border p-2 rounded">
+                <input type="text" id="desc" placeholder="Penerangan Ringkas" class="border p-2 rounded">
+                <button onclick="saveService()" class="bg-blue-600 text-white p-2 rounded font-bold hover:bg-blue-700 md:col-span-2">Simpan Servis</button>
+            </div>
+        </div>
+
+        <!-- Senarai Servis Sedia Ada -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="p-4">Servis</th>
+                        <th class="p-4">Harga</th>
+                        <th class="p-4">Tindakan</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-list">
+                    <!-- Data dari Google Sheet akan muncul di sini -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "URL_GOOGLE_APPS_SCRIPT_ANDA"; // Masukkan URL yang sama dengan index.html
+
+        async function fetchAdminServices() {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            const list = document.getElementById('admin-list');
+            list.innerHTML = data.map(s => `
+                <tr class="border-b">
+                    <td class="p-4 font-semibold">${s.Name}</td>
+                    <td class="p-4 text-blue-600 font-bold">RM ${parseFloat(s.Price).toFixed(2)}</td>
+                    <td class="p-4">
+                        <button onclick="deleteService('${s.ID}')" class="text-red-500 hover:underline">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function saveService() {
+            const data = {
+                action: "add",
+                name: document.getElementById('name').value,
+                price: document.getElementById('price').value,
+                image: document.getElementById('image').value,
+                desc: document.getElementById('desc').value
+            };
+
+            Swal.fire('Sila tunggu...', 'Sedang menyimpan data ke Google Sheet');
+            
+            await fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Penting untuk Google Apps Script
+                body: JSON.stringify(data)
+            });
+
+            Swal.fire('Berjaya!', 'Servis telah ditambah.', 'success');
+            setTimeout(() => location.reload(), 1500);
+        }
+
+        async function deleteService(id) {
+            if(!confirm("Anda pasti mahu hapus servis ini?")) return;
+
+            await fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: "delete", id: id })
+            });
+
+            Swal.fire('Dihapuskan!', 'Servis telah dibuang.', 'info');
+            setTimeout(() => location.reload(), 1500);
+        }
+
+        fetchAdminServices();
+    </script>
+</body>
+</html>
